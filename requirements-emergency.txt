@@ -1,0 +1,8 @@
+# Аварийные зависимости - только самое необходимое для работы бота
+fastapi==0.100.0
+uvicorn==0.22.0
+python-telegram-bot==20.6
+openai==1.0.0
+httpx==0.24.0
+python-dotenv==1.0.0
+pydantic==2.4.0 
