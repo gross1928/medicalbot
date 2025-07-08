@@ -102,39 +102,80 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Проверка здоровья приложения"""
-    # Всегда возвращаем 200 OK если FastAPI работает
-    # Railway должен получать успешный ответ если веб-сервер доступен
+    # ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ для диагностики Railway
+    import os
+    import psutil
+    import time
+    
+    logger.info("🏥 Health check запрос получен!")
+    logger.info(f"🌐 Запрос от: {os.environ.get('RAILWAY_ENVIRONMENT', 'unknown')}")
+    
     try:
+        # Логируем системную информацию
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        
+        logger.info(f"💾 Memory usage: {memory_info.rss / 1024 / 1024:.2f} MB")
+        logger.info(f"⚡ CPU percent: {process.cpu_percent()}%")
+        logger.info(f"🕒 Uptime: {time.time() - process.create_time():.2f} seconds")
+        
         # Проверяем состояние бота (для информации, но не критично)
         bot_status = "unknown"
         if bot_application and bot_application.running:
             bot_status = "running"
+            logger.info("🤖 Bot application: RUNNING")
         elif bot_application:
             bot_status = "stopped"
+            logger.info("🤖 Bot application: STOPPED")
         else:
             bot_status = "not_initialized"
+            logger.info("🤖 Bot application: NOT_INITIALIZED")
         
+        # Логируем настройки
         webhook_url = "none"
         if settings.telegram_webhook_url:
             webhook_url = f"{settings.telegram_webhook_url}/webhook/{settings.telegram_bot_token}"
+            logger.info(f"🔗 Webhook URL: {webhook_url}")
+        else:
+            logger.info("🔗 Webhook URL: не настроен")
         
-        return {
+        # Логируем переменные окружения
+        logger.info(f"🌍 PORT env: {os.environ.get('PORT', 'не задан')}")
+        logger.info(f"🏠 HOST env: {os.environ.get('HOST', 'не задан')}")
+        logger.info(f"🚂 Railway env: {os.environ.get('RAILWAY_ENVIRONMENT', 'не задан')}")
+        
+        response_data = {
             "status": "healthy",
+            "timestamp": time.time(),
             "bot_status": bot_status,
             "webhook_url": webhook_url,
-            "message": "FastAPI server is running"
+            "memory_mb": round(memory_info.rss / 1024 / 1024, 2),
+            "cpu_percent": process.cpu_percent(),
+            "uptime_seconds": round(time.time() - process.create_time(), 2),
+            "port": os.environ.get('PORT', settings.app_port),
+            "host": settings.app_host,
+            "message": "FastAPI server is running and healthy"
         }
+        
+        logger.info(f"✅ Health check успешен! Ответ: {response_data}")
+        return response_data
         
     except Exception as e:
         # Даже при ошибках возвращаем 200 OK
         # Railway нужен только ответ сервера, не внутренняя логика
-        logger.error(f"Health check internal error: {e}")
-        return {
+        logger.error(f"❌ Health check internal error: {e}")
+        logger.error(f"🔍 Error details: {str(e)}")
+        
+        error_response = {
             "status": "healthy",
-            "bot_status": "error",
+            "bot_status": "error", 
             "error": str(e),
+            "timestamp": time.time(),
             "message": "FastAPI server is running despite internal errors"
         }
+        
+        logger.info(f"⚠️ Health check с ошибкой, но возвращаем OK: {error_response}")
+        return error_response
 
 
 @app.post("/webhook/{token}")

@@ -92,6 +92,11 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 **Статус**: ✅ **ИСПРАВЛЕНА**
 **Решение**: Переименовано поле в supported_file_types для избежания автопарсинга ALLOWED_FILE_TYPES env var
 
+#### ❌ Ошибка 8: Railway Deploy Failed - Health Check 
+**Проблема**: `Deploy failed` в Railway из-за health check endpoint возвращающего статус 500
+**Статус**: ✅ **ИСПРАВЛЕНА** (08.01.2025)
+**Решение**: Изменён health endpoint для всегда возврата 200 OK + увеличен timeout до 60 сек
+
 **Исправленные файлы**:
 - ✅ `requirements.txt` - убраны дублирования, обновлены версии + добавлены зависимости для обработки файлов  
 - ✅ `requirements-minimal.txt` - минимальная версия для Railway

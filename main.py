@@ -28,51 +28,95 @@ logger = logging.getLogger(__name__)
 
 async def main():
     """Главная функция запуска бота"""
+    import os
+    import time
+    
     try:
-        logger.info("Starting Medical AI Analyzer Bot...")
+        start_time = time.time()
+        logger.info("🚀 Starting Medical AI Analyzer Bot...")
+        
+        # Логируем системную информацию
+        logger.info(f"🐍 Python version: {sys.version}")
+        logger.info(f"💻 Platform: {sys.platform}")
+        logger.info(f"🚂 Railway environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'local')}")
+        logger.info(f"📂 Working directory: {os.getcwd()}")
+        
+        # Логируем настройки
+        logger.info(f"⚙️ App host: {settings.app_host}")
+        logger.info(f"⚙️ App port: {settings.app_port}")
+        logger.info(f"⚙️ Log level: {settings.log_level}")
+        logger.info(f"⚙️ Webhook URL: {settings.telegram_webhook_url or 'не задан'}")
         
         # Проверяем соединение с Supabase (необязательно для демо-режима)
+        logger.info("🗄️ Проверяем соединение с базой данных...")
         if not settings.supabase_url.startswith("https://demo"):
             supabase_client = get_supabase_client()
             if not await supabase_client.test_connection():
-                logger.warning("Failed to connect to Supabase - continuing in demo mode")
+                logger.warning("⚠️ Failed to connect to Supabase - continuing in demo mode")
+            else:
+                logger.info("✅ Supabase connection successful")
         else:
-            logger.info("Running in demo mode - skipping database connection")
+            logger.info("🎭 Running in demo mode - skipping database connection")
         
         # Создаем и запускаем бота
+        logger.info("🤖 Создаём MedicalBot...")
         bot = MedicalBot()
+        logger.info(f"🎭 Demo mode: {bot.demo_mode}")
         
         # Проверяем демо-режим
         if bot.demo_mode:
-            logger.info("Application started in demo mode. Waiting...")
+            logger.info("🎭 Application started in demo mode. Waiting...")
             # В демо-режиме просто ждем бесконечно
             while True:
                 await asyncio.sleep(60)
-                logger.info("Demo mode: Still running...")
+                logger.info("🎭 Demo mode: Still running...")
         elif settings.telegram_webhook_url:
             # Запускаем FastAPI сервер для webhook режима
-            logger.info("Starting FastAPI webhook server")
+            import os
             import uvicorn
             from src.api.webapp import app
+            
+            # КРИТИЧНО: Railway ожидает приложение на $PORT
+            railway_port = os.environ.get('PORT', settings.app_port)
+            actual_host = settings.app_host
+            actual_port = int(railway_port)
+            
+            logger.info("🚀 Starting FastAPI webhook server")
+            logger.info(f"🌍 Host: {actual_host}")
+            logger.info(f"🔌 Port: {actual_port} (Railway PORT env: {os.environ.get('PORT', 'не задан')})")
+            logger.info(f"📝 Log level: {settings.log_level.lower()}")
+            logger.info(f"🚂 Railway environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'не задан')}")
+            logger.info(f"🔗 Webhook URL: {settings.telegram_webhook_url}")
             
             # Запускаем сервер
             config = uvicorn.Config(
                 app,
-                host=settings.app_host,
-                port=settings.app_port,
+                host=actual_host,
+                port=actual_port,
                 log_level=settings.log_level.lower()
             )
             server = uvicorn.Server(config)
+            
+            logger.info(f"🎯 Сервер будет слушать на {actual_host}:{actual_port}")
             await server.serve()
         else:
             # Запускаем в режиме polling (для разработки)
-            logger.info("Starting bot in polling mode")
+            logger.info("🔄 Starting bot in polling mode")
             await bot.start_polling()
             
+        # Если дошли сюда, всё прошло успешно
+        elapsed = time.time() - start_time
+        logger.info(f"🎉 Application started successfully in {elapsed:.2f} seconds")
+            
     except KeyboardInterrupt:
-        logger.info("Bot stopped by user")
+        logger.info("🛑 Bot stopped by user")
     except Exception as e:
-        logger.error(f"Error starting bot: {e}")
+        logger.error(f"💥 CRITICAL ERROR starting bot: {e}")
+        logger.error(f"🔍 Error type: {type(e).__name__}")
+        logger.error(f"📍 Error details: {str(e)}")
+        import traceback
+        logger.error(f"📋 Full traceback: {traceback.format_exc()}")
+        raise  # Перебрасываем ошибку чтобы Railway видел failure
 
 
 if __name__ == "__main__":

@@ -16,3 +16,6 @@ Pillow
 pytesseract
 PyPDF2
 pdf2image
+
+# Системный мониторинг для диагностики
+psutil
