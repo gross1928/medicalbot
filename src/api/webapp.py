@@ -45,21 +45,49 @@ async def lifespan(app: FastAPI):
                 webhook_url = f"{settings.telegram_webhook_url}/webhook/{settings.telegram_bot_token}"
                 logger.info(f"🔗 Настраиваем webhook: {webhook_url}")
                 
-                try:
-                    await bot_application.bot.set_webhook(
-                        url=webhook_url,
-                        allowed_updates=["message", "callback_query"],
-                        drop_pending_updates=True
-                    )
-                    logger.info(f"✅ Webhook set successfully to: {webhook_url}")
-                    
-                    # Проверяем статус webhook
-                    webhook_info = await bot_application.bot.get_webhook_info()
-                    logger.info(f"📊 Webhook info: URL={webhook_info.url}, pending={webhook_info.pending_update_count}")
-                    
-                except Exception as e:
-                    logger.error(f"❌ Failed to set webhook: {e}")
-                    raise
+                # Добавляем задержку для готовности Railway proxy
+                import asyncio
+                logger.info("⏳ Ждем готовности Railway proxy (5 сек)...")
+                await asyncio.sleep(5)
+                
+                # Retry логика для webhook установки
+                max_retries = 3
+                retry_delay = 10  # секунд
+                
+                for attempt in range(max_retries):
+                    try:
+                        logger.info(f"🔄 Попытка установки webhook {attempt + 1}/{max_retries}")
+                        
+                        await bot_application.bot.set_webhook(
+                            url=webhook_url,
+                            allowed_updates=["message", "callback_query"],
+                            drop_pending_updates=True
+                        )
+                        
+                        # Проверяем что webhook действительно установлен
+                        await asyncio.sleep(2)  # Небольшая задержка перед проверкой
+                        webhook_info = await bot_application.bot.get_webhook_info()
+                        
+                        if webhook_info.url == webhook_url:
+                            logger.info(f"✅ Webhook set successfully to: {webhook_url}")
+                            logger.info(f"📊 Webhook info: URL={webhook_info.url}, pending={webhook_info.pending_update_count}")
+                            break
+                        else:
+                            logger.warning(f"⚠️ Webhook URL mismatch: expected={webhook_url}, got={webhook_info.url}")
+                            if attempt < max_retries - 1:
+                                logger.info(f"⏳ Retry через {retry_delay} секунд...")
+                                await asyncio.sleep(retry_delay)
+                            else:
+                                logger.error("❌ Failed to set webhook after all retries")
+                                
+                    except Exception as e:
+                        logger.error(f"❌ Webhook attempt {attempt + 1} failed: {e}")
+                        if attempt < max_retries - 1:
+                            logger.info(f"⏳ Retry через {retry_delay} секунд...")
+                            await asyncio.sleep(retry_delay)
+                        else:
+                            logger.error("❌ Failed to set webhook after all retries")
+                            # Не прерываем startup - приложение может работать без webhook
             else:
                 logger.info("⚠️ No webhook URL configured, running in polling mode")
         else:
