@@ -88,15 +88,57 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Добавляем middleware для логирования всех запросов
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Логируем все входящие запросы для диагностики Railway"""
+    import time
+    start_time = time.time()
+    
+    # Логируем входящий запрос
+    logger.info(f"🌐 Incoming request: {request.method} {request.url}")
+    logger.info(f"🔍 Headers: {dict(request.headers)}")
+    logger.info(f"📍 Client: {request.client}")
+    
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        logger.info(f"✅ Response: {response.status_code} in {process_time:.4f}s")
+        return response
+    except Exception as e:
+        process_time = time.time() - start_time
+        logger.error(f"❌ Request failed: {e} in {process_time:.4f}s")
+        raise
+
 
 @app.get("/")
 async def root():
     """Корневой endpoint"""
-    return {
+    import time
+    import os
+    
+    logger.info("🏠 Root endpoint запрос получен!")
+    
+    response = {
         "message": "Medical AI Bot API",
         "status": "running",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "timestamp": time.time(),
+        "environment": os.environ.get('RAILWAY_ENVIRONMENT', 'unknown'),
+        "port": os.environ.get('PORT', 'unknown'),
+        "uptime": "healthy"
     }
+    
+    logger.info(f"🏠 Root endpoint ответ: {response}")
+    return response
+
+@app.get("/ping") 
+async def ping():
+    """Простейший ping endpoint для тестирования"""
+    import time
+    logger.info("🏓 Ping запрос получен!")
+    return {"ping": "pong", "timestamp": time.time()}
 
 
 @app.get("/health")

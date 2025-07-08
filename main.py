@@ -88,12 +88,17 @@ async def main():
             logger.info(f"🚂 Railway environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'не задан')}")
             logger.info(f"🔗 Webhook URL: {settings.telegram_webhook_url}")
             
-            # Запускаем сервер
+            # Запускаем сервер с Railway-оптимизированными настройками
             config = uvicorn.Config(
                 app,
-                host=actual_host,
-                port=actual_port,
-                log_level=settings.log_level.lower()
+                host=actual_host,  # 0.0.0.0 для Railway
+                port=actual_port,  # $PORT от Railway
+                log_level=settings.log_level.lower(),
+                access_log=True,   # Включаем access логи
+                use_colors=False,  # Отключаем цвета для Railway логов
+                server_header=False,  # Убираем server header
+                timeout_keep_alive=30,  # Keep-alive timeout
+                timeout_graceful_shutdown=30  # Graceful shutdown
             )
             server = uvicorn.Server(config)
             

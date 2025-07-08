@@ -5,8 +5,8 @@
   },
   "deploy": {
     "startCommand": "python main.py",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 60,
+    "healthcheckPath": "/ping",
+    "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE"
   }
 } 
