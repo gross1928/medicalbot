@@ -41,9 +41,9 @@
 **Решение**: Переключение на FastAPI uvicorn сервер вместо telegram bot.run_webhook()
 
 #### ❌ Ошибка 7: JSONDecodeError для allowed_file_types
-**Проблема**: `json.decoder.JSONDecodeError: Expecting value` при парсинге поля allowed_file_types
+**Проблема**: `json.decoder.JSONDecodeError: Expecting value` при парсинге поля allowed_file_types  
 **Статус**: ✅ **ИСПРАВЛЕНА**
-**Решение**: Убран проблемный env="ALLOWED_FILE_TYPES" парсинг, используется простое default значение
+**Решение**: Переименовано поле в supported_file_types для избежания автопарсинга ALLOWED_FILE_TYPES env var
 
 **Исправленные файлы**:
 - ✅ `requirements.txt` - убраны дублирования, обновлены версии + добавлены зависимости для обработки файлов  
@@ -57,10 +57,11 @@
 - ✅ `supabase_data.sql` - базовые медицинские нормы
 - ✅ `DATABASE_INFO.md` - обновленные инструкции
 - ✅ `БЫСТРЫЙ_СТАРТ_БД.md` - краткая инструкция
-- ✅ `config/settings.py` - добавлены демо-значения для всех конфигураций
+- ✅ `config/settings.py` - добавлены демо-значения для всех конфигураций + переименовано поле в supported_file_types
 - ✅ `main.py` - добавлена поддержка демо-режима + исправлен event loop для webhook
 - ✅ `src/bot/bot.py` - добавлен демо-режим для стабильного запуска
 - ✅ `src/api/webapp.py` - исправлена инициализация бота и webhook настройка
+- ✅ `src/bot/handlers.py` - использование settings.supported_file_types вместо хардкода
 
 ### Системный обзор
 - **Цель**: ✅ Создать ИИ-агента в Telegram для анализа медицинских анализов и выдачи персонализированных рекомендаций по здоровью
