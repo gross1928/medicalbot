@@ -10,3 +10,9 @@ pydantic
 pydantic-settings
 aiofiles
 python-multipart
+
+# Обработка файлов и изображений
+Pillow
+pytesseract
+PyPDF2
+pdf2image

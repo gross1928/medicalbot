@@ -6,10 +6,14 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PIP_NO_CACHE_DIR=1
 
-# Только базовые системные зависимости
+# Системные зависимости включая tesseract и poppler для обработки файлов
 RUN apt-get update && apt-get install -y \
     curl \
     gcc \
+    tesseract-ocr \
+    tesseract-ocr-rus \
+    tesseract-ocr-eng \
+    poppler-utils \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
