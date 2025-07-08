@@ -5,24 +5,25 @@ from typing import List
 from pydantic_settings import BaseSettings
 from pydantic import Field
 import os
+import secrets
 
 
 class Settings(BaseSettings):
     """Настройки приложения"""
     
     # Telegram Bot Configuration
-    telegram_bot_token: str = Field(..., env="TELEGRAM_BOT_TOKEN")
+    telegram_bot_token: str = Field("DEMO_TOKEN", env="TELEGRAM_BOT_TOKEN")
     telegram_webhook_url: str = Field("", env="TELEGRAM_WEBHOOK_URL")
     
     # OpenAI Configuration
-    openai_api_key: str = Field(..., env="OPENAI_API_KEY")
+    openai_api_key: str = Field("sk-demo", env="OPENAI_API_KEY")
     openai_model: str = Field("gpt-4", env="OPENAI_MODEL")
     openai_max_tokens: int = Field(2000, env="OPENAI_MAX_TOKENS")
     
     # Supabase Configuration
-    supabase_url: str = Field(..., env="SUPABASE_URL")
-    supabase_anon_key: str = Field(..., env="SUPABASE_ANON_KEY")
-    supabase_service_role_key: str = Field(..., env="SUPABASE_SERVICE_ROLE_KEY")
+    supabase_url: str = Field("https://demo.supabase.co", env="SUPABASE_URL")
+    supabase_anon_key: str = Field("demo_anon_key", env="SUPABASE_ANON_KEY")
+    supabase_service_role_key: str = Field("demo_service_key", env="SUPABASE_SERVICE_ROLE_KEY")
     
     # Application Configuration
     app_env: str = Field("development", env="APP_ENV")
@@ -31,7 +32,7 @@ class Settings(BaseSettings):
     debug: bool = Field(True, env="DEBUG")
     
     # Security
-    secret_key: str = Field(..., env="SECRET_KEY")
+    secret_key: str = Field(default_factory=lambda: secrets.token_urlsafe(32), env="SECRET_KEY")
     encryption_key: str = Field("", env="ENCRYPTION_KEY")
     
     # File Processing

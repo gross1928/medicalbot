@@ -31,16 +31,25 @@ async def main():
     try:
         logger.info("Starting Medical AI Analyzer Bot...")
         
-        # Проверяем соединение с Supabase
-        supabase_client = get_supabase_client()
-        if not await supabase_client.test_connection():
-            logger.error("Failed to connect to Supabase")
-            return
+        # Проверяем соединение с Supabase (необязательно для демо-режима)
+        if not settings.supabase_url.startswith("https://demo"):
+            supabase_client = get_supabase_client()
+            if not await supabase_client.test_connection():
+                logger.warning("Failed to connect to Supabase - continuing in demo mode")
+        else:
+            logger.info("Running in demo mode - skipping database connection")
         
         # Создаем и запускаем бота
         bot = MedicalBot()
         
-        if settings.telegram_webhook_url:
+        # Проверяем демо-режим
+        if bot.demo_mode:
+            logger.info("Application started in demo mode. Waiting...")
+            # В демо-режиме просто ждем бесконечно
+            while True:
+                await asyncio.sleep(60)
+                logger.info("Demo mode: Still running...")
+        elif settings.telegram_webhook_url:
             # Запускаем в режиме webhook (для продакшна)
             logger.info("Starting bot in webhook mode")
             await bot.start_webhook(
