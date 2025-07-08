@@ -40,6 +40,11 @@
 **Статус**: ✅ **ИСПРАВЛЕНА**
 **Решение**: Переключение на FastAPI uvicorn сервер вместо telegram bot.run_webhook()
 
+#### ❌ Ошибка 7: JSONDecodeError для allowed_file_types
+**Проблема**: `json.decoder.JSONDecodeError: Expecting value` при парсинге поля allowed_file_types
+**Статус**: ✅ **ИСПРАВЛЕНА**
+**Решение**: Убран проблемный env="ALLOWED_FILE_TYPES" парсинг, используется простое default значение
+
 **Исправленные файлы**:
 - ✅ `requirements.txt` - убраны дублирования, обновлены версии + добавлены зависимости для обработки файлов  
 - ✅ `requirements-minimal.txt` - минимальная версия для Railway
