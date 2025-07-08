@@ -32,21 +32,27 @@ async def lifespan(app: FastAPI):
         
         # Создаем и инициализируем бота
         medical_bot = MedicalBot()
-        bot_application = await medical_bot.create_application()
+        bot_application = medical_bot.create_application()
         
-        # Инициализируем приложение бота
-        await bot_application.initialize()
-        await bot_application.start()
+        if bot_application:
+            # Инициализируем приложение бота
+            await bot_application.initialize()
+            await bot_application.start()
+            
+            # Устанавливаем webhook если есть URL
+            if settings.telegram_webhook_url:
+                webhook_url = f"{settings.telegram_webhook_url}/webhook/{settings.telegram_bot_token}"
+                await bot_application.bot.set_webhook(
+                    url=webhook_url,
+                    allowed_updates=["message", "callback_query"],
+                    drop_pending_updates=True
+                )
+                logger.info(f"Webhook set to: {webhook_url}")
+            else:
+                logger.info("No webhook URL configured, running in polling mode")
+        else:
+            logger.info("Bot application is in demo mode")
         
-        # Устанавливаем webhook
-        webhook_url = f"{settings.webhook_url}/webhook/{settings.telegram_bot_token}"
-        await bot_application.bot.set_webhook(
-            url=webhook_url,
-            allowed_updates=["message", "callback_query"],
-            drop_pending_updates=True
-        )
-        
-        logger.info(f"Webhook set to: {webhook_url}")
         logger.info("FastAPI application started successfully")
         
         yield
@@ -106,10 +112,14 @@ async def health_check():
         else:
             bot_status = "not_initialized"
         
+        webhook_url = "none"
+        if settings.telegram_webhook_url:
+            webhook_url = f"{settings.telegram_webhook_url}/webhook/{settings.telegram_bot_token}"
+        
         return {
             "status": "healthy",
             "bot_status": bot_status,
-            "webhook_url": f"{settings.webhook_url}/webhook/{settings.telegram_bot_token}"
+            "webhook_url": webhook_url
         }
         
     except Exception as e:
@@ -146,14 +156,15 @@ async def webhook(token: str, request: Request, background_tasks: BackgroundTask
         
         if update:
             # Логируем получение update
-            structured_logger.log_user_action(
-                user_id=update.effective_user.id if update.effective_user else 0,
-                action="webhook_update_received",
-                details={
-                    "update_id": update.update_id,
-                    "type": update.effective_message.text[:50] if update.effective_message else "callback_query"
-                }
-            )
+            if hasattr(structured_logger, 'log_user_action'):
+                structured_logger.log_user_action(
+                    user_id=update.effective_user.id if update.effective_user else 0,
+                    action="webhook_update_received",
+                    details={
+                        "update_id": update.update_id,
+                        "type": update.effective_message.text[:50] if update.effective_message else "callback_query"
+                    }
+                )
             
             # Обрабатываем update в фоне
             background_tasks.add_task(process_update, update)
@@ -165,11 +176,12 @@ async def webhook(token: str, request: Request, background_tasks: BackgroundTask
             
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
-        structured_logger.log_error_event(
-            user_id=0,
-            error_type="webhook_processing_error",
-            error_details=str(e)
-        )
+        if hasattr(structured_logger, 'log_error_event'):
+            structured_logger.log_error_event(
+                user_id=0,
+                error_type="webhook_processing_error",
+                error_details=str(e)
+            )
         
         # Возвращаем 200 чтобы Telegram не повторял запрос
         return {"status": "error", "message": str(e)}
@@ -190,9 +202,13 @@ async def get_stats():
     """Получить статистику бота"""
     try:
         # Базовая статистика
+        webhook_url = "none"
+        if settings.telegram_webhook_url:
+            webhook_url = f"{settings.telegram_webhook_url}/webhook/{settings.telegram_bot_token}"
+            
         stats = {
             "bot_running": bot_application.running if bot_application else False,
-            "webhook_url": f"{settings.webhook_url}/webhook/{settings.telegram_bot_token}",
+            "webhook_url": webhook_url,
         }
         
         # Можно добавить дополнительную статистику из базы данных
@@ -204,7 +220,9 @@ async def get_stats():
         logger.error(f"Error getting stats: {e}")
         return JSONResponse(
             status_code=500,
-            content={"error": str(e)}
+            content={
+                "error": str(e)
+            }
         )
 
 

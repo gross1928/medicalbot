@@ -50,12 +50,20 @@ async def main():
                 await asyncio.sleep(60)
                 logger.info("Demo mode: Still running...")
         elif settings.telegram_webhook_url:
-            # Запускаем в режиме webhook (для продакшна)
-            logger.info("Starting bot in webhook mode")
-            await bot.start_webhook(
-                webhook_url=settings.telegram_webhook_url,
-                port=settings.app_port
+            # Запускаем FastAPI сервер для webhook режима
+            logger.info("Starting FastAPI webhook server")
+            import uvicorn
+            from src.api.webapp import app
+            
+            # Запускаем сервер
+            config = uvicorn.Config(
+                app,
+                host=settings.app_host,
+                port=settings.app_port,
+                log_level=settings.log_level.lower()
             )
+            server = uvicorn.Server(config)
+            await server.serve()
         else:
             # Запускаем в режиме polling (для разработки)
             logger.info("Starting bot in polling mode")
