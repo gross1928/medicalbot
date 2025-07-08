@@ -1,4 +1,4 @@
-# Ультра-минимальные зависимости (только критичные)
+# Ультра-минимальные зависимости + необходимые для работы
 fastapi
 uvicorn[standard]
 python-telegram-bot[webhooks]
@@ -8,3 +8,5 @@ python-dotenv
 httpx
 pydantic
 pydantic-settings
+aiofiles
+python-multipart
