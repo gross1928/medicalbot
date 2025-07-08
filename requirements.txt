@@ -6,4 +6,5 @@ openai
 supabase
 python-dotenv
 httpx
-pydantic 
+pydantic
+pydantic-settings
