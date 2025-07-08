@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     
     # File Processing
     max_file_size_mb: int = Field(20, env="MAX_FILE_SIZE_MB")
-    allowed_file_types: List[str] = Field(default=["pdf", "jpg", "jpeg", "png"])
+    supported_file_types: List[str] = Field(default=["pdf", "jpg", "jpeg", "png"])
     ocr_language: str = Field("rus+eng", env="OCR_LANGUAGE")
     
     # Monitoring
