@@ -91,18 +91,42 @@ async def main():
             # Запускаем сервер с Railway-оптимизированными настройками
             config = uvicorn.Config(
                 app,
-                host=actual_host,  # 0.0.0.0 для Railway
-                port=actual_port,  # $PORT от Railway
+                host="0.0.0.0",        # Explicit binding для Railway
+                port=actual_port,      # $PORT от Railway
                 log_level=settings.log_level.lower(),
-                access_log=True,   # Включаем access логи
-                use_colors=False,  # Отключаем цвета для Railway логов
-                server_header=False,  # Убираем server header
-                timeout_keep_alive=30,  # Keep-alive timeout
-                timeout_graceful_shutdown=30  # Graceful shutdown
+                access_log=True,       # Включаем access логи
+                use_colors=False,      # Отключаем цвета для Railway логов
+                server_header=False,   # Убираем server header
+                timeout_keep_alive=30, # Keep-alive timeout
+                timeout_graceful_shutdown=30,  # Graceful shutdown
+                workers=1,             # Single worker для Railway
+                loop="asyncio",        # Explicit event loop
+                interface="asgi3",     # ASGI3 interface
+                reload=False,          # Disable reload in production
+                limit_concurrency=100, # Connection limit
+                limit_max_requests=1000,  # Request limit per worker
+                backlog=2048           # Socket backlog
             )
             server = uvicorn.Server(config)
             
             logger.info(f"🎯 Сервер будет слушать на {actual_host}:{actual_port}")
+            
+            # Railway диагностика
+            logger.info(f"🚂 Railway PORT env var: {os.environ.get('PORT', 'не задан')}")
+            logger.info(f"🌐 Railway URL env var: {os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'не задан')}")
+            logger.info(f"🔗 Full Railway URL: https://{os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'unknown')}")
+            logger.info(f"⚙️ Uvicorn config: workers=1, interface=asgi3, backlog=2048")
+            
+            # Проверяем что порт свободен
+            import socket
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.bind((actual_host, actual_port))
+                sock.close()
+                logger.info(f"✅ Port {actual_port} is available for binding")
+            except OSError as e:
+                logger.warning(f"⚠️ Port {actual_port} binding check failed: {e}")
+            
             await server.serve()
         else:
             # Запускаем в режиме polling (для разработки)

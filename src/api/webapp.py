@@ -426,6 +426,58 @@ async def get_webhook_info():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/debug")
+async def debug_info():
+    """Debug endpoint для Railway диагностики"""
+    import os
+    import socket
+    import sys
+    import time
+    
+    logger.info("🔧 Debug endpoint запрос получен!")
+    
+    try:
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        
+        debug_data = {
+            "environment": {
+                "PORT": os.environ.get('PORT', 'not set'),
+                "HOST": os.environ.get('HOST', 'not set'),
+                "RAILWAY_ENVIRONMENT": os.environ.get('RAILWAY_ENVIRONMENT', 'not set'),
+                "RAILWAY_PUBLIC_DOMAIN": os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'not set'),
+                "RAILWAY_PROJECT_ID": os.environ.get('RAILWAY_PROJECT_ID', 'not set'),
+                "RAILWAY_SERVICE_ID": os.environ.get('RAILWAY_SERVICE_ID', 'not set')
+            },
+            "system": {
+                "hostname": hostname,
+                "local_ip": local_ip,
+                "python_version": sys.version,
+                "platform": sys.platform
+            },
+            "application": {
+                "settings_app_port": settings.app_port,
+                "settings_app_host": settings.app_host,
+                "webhook_url": settings.telegram_webhook_url,
+                "bot_token_set": bool(settings.telegram_bot_token != "DEMO_TOKEN")
+            },
+            "status": "debug_ok",
+            "timestamp": time.time()
+        }
+        
+        logger.info(f"🔧 Debug info: {debug_data}")
+        return debug_data
+        
+    except Exception as e:
+        error_data = {
+            "error": str(e),
+            "status": "debug_error",
+            "timestamp": time.time()
+        }
+        logger.error(f"❌ Debug endpoint error: {error_data}")
+        return error_data
+
+
 def create_app() -> FastAPI:
     """Фабрика для создания приложения"""
     # Настраиваем логирование
