@@ -33,8 +33,13 @@ COPY . .
 # Создаем необходимые директории
 RUN mkdir -p /app/logs
 
-# Экспонируем порт
-EXPOSE 8000
+# ИСПРАВЛЕНИЕ: Railway обычно использует порт 8080
+# Экспонируем порт который соответствует Railway PORT env
+EXPOSE 8080
+
+# Добавляем healthcheck для Railway (порт 8080 стандартный для Railway)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/ || exit 1
 
 # Команда запуска
 CMD ["python", "main.py"] 
