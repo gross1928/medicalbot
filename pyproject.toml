@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "medical-ai-analyzer"
+version = "0.1.0"
+description = "Telegram bot for medical analysis interpretation"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+python-telegram-bot = {extras = ["webhooks"], version = "*"}
+openai = "*"
+supabase = "*"
+python-dotenv = "*"
+httpx = "*"
+pydantic = "*"
+pydantic-settings = "*"
+aiofiles = "*"
+python-multipart = "*"
+Pillow = "*"
+pytesseract = "*"
+PyPDF2 = "*"
+pdf2image = "*"
+psutil = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api" 

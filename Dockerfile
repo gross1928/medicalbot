@@ -1,45 +1,43 @@
-# Упрощенный Dockerfile для надежного деплоя
-FROM python:3.11-slim
+# Этап 1: Сборка с зависимостями
+FROM python:3.11-slim as builder
 
-# Основные переменные окружения
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PIP_NO_CACHE_DIR=1
-
-# Системные зависимости включая tesseract и poppler для обработки файлов
-RUN apt-get update && apt-get install -y \
-    curl \
-    gcc \
-    tesseract-ocr \
-    tesseract-ocr-rus \
-    tesseract-ocr-eng \
-    poppler-utils \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Обновляем pip
-RUN pip install --upgrade pip
-
-# Рабочая директория
 WORKDIR /app
 
-# Копируем requirements и устанавливаем зависимости
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Устанавливаем переменные окружения для Poetry
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
 
-# Копируем исходный код
+# Устанавливаем Poetry
+RUN pip install poetry
+
+# Копируем файлы проекта и устанавливаем зависимости
+# Это кэшируется, если файлы не менялись
+COPY pyproject.toml poetry.lock* ./
+# Добавляем . для поддержки старых версий poetry.lock
+RUN poetry install --no-dev --no-root
+
+# Этап 2: Финальный образ
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Устанавливаем переменные окружения для запуска
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH" \
+    PORT=8080
+
+# Копируем виртуальное окружение со всеми зависимостями из сборщика
+COPY --from=builder /app/.venv ./.venv
+
+# Копируем исходный код приложения
 COPY . .
 
-# Создаем необходимые директории
-RUN mkdir -p /app/logs
-
-# ИСПРАВЛЕНИЕ: Railway обычно использует порт 8080
-# Экспонируем порт который соответствует Railway PORT env
+# Открываем порт, который Railway будет использовать
 EXPOSE 8080
 
-# Добавляем healthcheck для Railway (порт 8080 стандартный для Railway)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/ || exit 1
-
-# Команда запуска
-CMD ["python", "main.py"] 
+# Команда для запуска приложения
+# Uvicorn автоматически будет слушать на $PORT, если он установлен Railway
+CMD ["uvicorn", "main:create_app", "--host", "0.0.0.0", "--port", "8080", "--factory"] 

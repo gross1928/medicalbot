@@ -1,9 +1,0 @@
-# Ультра-минимальные зависимости (только критичные)
-fastapi
-uvicorn[standard]
-python-telegram-bot[webhooks]
-openai  
-supabase
-python-dotenv
-httpx
-pydantic 
