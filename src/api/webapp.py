@@ -54,6 +54,14 @@ async def lifespan(app: FastAPI):
                 max_retries = 3
                 retry_delay = 10  # секунд
                 
+                # Принудительно удаляем старый вебхук перед установкой нового
+                try:
+                    logger.info("ℹ️ Принудительно удаляем старый вебхук...")
+                    await bot_application.bot.delete_webhook(drop_pending_updates=True)
+                    logger.info("✅ Старый вебхук успешно удален.")
+                except Exception as e:
+                    logger.warning(f"⚠️ Не удалось удалить старый вебхук (возможно, его и не было): {e}")
+
                 for attempt in range(max_retries):
                     try:
                         logger.info(f"🔄 Попытка установки webhook {attempt + 1}/{max_retries}")
@@ -64,16 +72,23 @@ async def lifespan(app: FastAPI):
                             drop_pending_updates=True
                         )
                         
-                        # Проверяем что webhook действительно установлен
-                        await asyncio.sleep(2)  # Небольшая задержка перед проверкой
+                        # Увеличиваем задержку перед проверкой
+                        logger.info("⏳ Ожидание 5 секунд для синхронизации с API Telegram...")
+                        await asyncio.sleep(5)
                         webhook_info = await bot_application.bot.get_webhook_info()
-                        
+                        webhook_info_dict = webhook_info.to_dict() # Преобразуем в словарь для полного лога
+
+                        logger.info(f"🔍 Получена информация о вебхуке: {webhook_info_dict}")
+
                         if webhook_info.url == webhook_url:
                             logger.info(f"✅ Webhook set successfully to: {webhook_url}")
                             logger.info(f"📊 Webhook info: URL={webhook_info.url}, pending={webhook_info.pending_update_count}")
                             break
                         else:
                             logger.warning(f"⚠️ Webhook URL mismatch: expected={webhook_url}, got={webhook_info.url}")
+                            if 'last_error_message' in webhook_info_dict and webhook_info_dict['last_error_message']:
+                                logger.error(f"❌ Telegram API last error: {webhook_info_dict['last_error_message']} (at {webhook_info_dict.get('last_error_date')})")
+
                             if attempt < max_retries - 1:
                                 logger.info(f"⏳ Retry через {retry_delay} секунд...")
                                 await asyncio.sleep(retry_delay)
