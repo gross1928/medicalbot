@@ -16,7 +16,7 @@ RUN pip install poetry
 # Это кэшируется, если файлы не менялись
 COPY pyproject.toml poetry.lock* ./
 # Добавляем . для поддержки старых версий poetry.lock
-RUN poetry install --no-dev --no-root
+RUN poetry install --no-dev --no-root -vvv
 
 # Этап 2: Финальный образ
 FROM python:3.11-slim
