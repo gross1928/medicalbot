@@ -8,12 +8,17 @@ import os
 import secrets
 
 
+# Сначала определяем URL для Railway, если он доступен
+railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+default_webhook_url = f"https://{railway_domain}" if railway_domain else ""
+
+
 class Settings(BaseSettings):
     """Настройки приложения"""
     
     # Telegram Bot Configuration
     telegram_bot_token: str = Field("DEMO_TOKEN", env="TELEGRAM_BOT_TOKEN")
-    telegram_webhook_url: str = Field("", env="TELEGRAM_WEBHOOK_URL")
+    telegram_webhook_url: str = Field(default=default_webhook_url, env="TELEGRAM_WEBHOOK_URL")
     
     # OpenAI Configuration
     openai_api_key: str = Field("sk-demo", env="OPENAI_API_KEY")
