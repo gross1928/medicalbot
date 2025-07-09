@@ -3,6 +3,12 @@ FROM python:3.11-slim as builder
 
 WORKDIR /app
 
+# Устанавливаем системные зависимости, необходимые для библиотек Python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
 # Устанавливаем переменные окружения для Poetry
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
